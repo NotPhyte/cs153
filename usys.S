@@ -29,3 +29,7 @@ SYSCALL(getpid)
 SYSCALL(sbrk)
 SYSCALL(sleep)
 SYSCALL(uptime)
+SYSCALL(hello) //HH
+SYSCALL(exit1)//A
+SYSCALL(waitpid)//C
+

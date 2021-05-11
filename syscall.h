@@ -20,3 +20,6 @@
 #define SYS_link   19
 #define SYS_mkdir  20
 #define SYS_close  21
+#define SYS_hello  22 //HH
+#define SYS_exit1  23 //A
+#define SYS_waitpid 24 //C

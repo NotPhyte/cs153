@@ -269,8 +269,9 @@ exit(void)
 
 // Wait for a child process to exit and return its pid.
 // Return -1 if this process has no children.
+//B
 int
-wait(void)
+wait(int* status)
 {
   struct proc *p;
   int havekids, pid;
@@ -295,6 +296,9 @@ wait(void)
         p->name[0] = 0;
         p->killed = 0;
         p->state = UNUSED;
+        if (status){
+            *status = p->exitStatus;
+        }
         release(&ptable.lock);
         return pid;
       }
@@ -303,6 +307,9 @@ wait(void)
     // No point waiting if we don't have any children.
     if(!havekids || curproc->killed){
       release(&ptable.lock);
+      if(status) {
+          *status = -1; //B no children so status should also be -1 to signify
+      }
       return -1;
     }
 
@@ -532,3 +539,108 @@ procdump(void)
     cprintf("\n");
   }
 }
+
+//HH
+void
+hello(void) {
+    cprintf("\n\n Hello from your kernel space! \n\n");
+}
+
+//A
+void
+exit1(int status) {
+    struct proc *curproc = myproc();
+    struct proc *p;
+    int fd;
+
+    if(curproc == initproc)
+        panic("init exiting");
+
+    // Close all open files.
+    for(fd = 0; fd < NOFILE; fd++){
+        if(curproc->ofile[fd]){
+            fileclose(curproc->ofile[fd]);
+            curproc->ofile[fd] = 0;
+        }
+    }
+
+    begin_op();
+    iput(curproc->cwd);
+    end_op();
+    curproc->cwd = 0;
+    curproc->exitStatus = status;//assigns exitStatus with status
+
+    acquire(&ptable.lock);
+
+    // Parent might be sleeping in wait().
+    wakeup1(curproc->parent);
+
+    // Pass abandoned children to init.
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+        if(p->parent == curproc){
+            p->parent = initproc;
+            if(p->state == ZOMBIE)
+                wakeup1(initproc);
+        }
+    }
+
+    // Jump into the scheduler, never to return.
+    curproc->state = ZOMBIE;
+    sched();
+    panic("zombie exit");
+}
+//C
+int
+waitpid(int pid,int* status) {
+    struct proc *p;
+    int found = 0;//tracks if there are any children
+    acquire(&ptable.lock);
+
+    //p table traversal to find matching pid
+    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+        if(p->pid != pid) { //not the one
+            continue;//next
+        }
+        else {
+            found = 1;
+            break;
+        }
+    }
+    if (!found) {
+        release(&ptable.lock);
+        if (status) {
+            *status = -1;
+        }
+        return -1;
+    }
+    else {
+        for(;;) {
+            if (p->state == ZOMBIE) {
+                kfree(p->kstack);
+                p->kstack = 0;
+                freevm(p->pgdir);
+                p->pid = 0;
+                p->parent = 0;
+                p->name[0] = 0;
+                p->killed = 0;
+                p->state = UNUSED;
+                if (status) {
+                    *status = p->exitStatus;
+                }
+                release(&ptable.lock);
+                return pid;
+            }
+            else if (p->state == UNUSED) {
+                if (status) {
+                    *status = p->exitStatus;
+                }
+                release(&ptable.lock);
+                return pid;
+            }
+
+            sleep(p,&ptable.lock);
+        }
+
+    }
+}
+
