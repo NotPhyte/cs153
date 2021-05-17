@@ -24,6 +24,8 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 int setprior(int);//MOD
+unsigned int turnaroundT(void);
+unsigned int currTime(void);
 
 // ulib.c
 int stat(const char*, struct stat*);

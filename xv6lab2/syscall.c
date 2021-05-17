@@ -104,6 +104,8 @@ extern int sys_wait(void);
 extern int sys_write(void);
 extern int sys_uptime(void);
 extern int sys_setprior(void);//MOD
+extern int sys_turnaroundT(void); //turnaround time syscall
+extern int sys_currTime(void); // current time syscall
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -128,8 +130,11 @@ static int (*syscalls[])(void) = {
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
 [SYS_setprior] sys_setprior,//MOD
+[SYS_turnaroundT] sys_turnaroundT, //MOD
+[SYS_currTime] sys_currTime, //MOD
 
 };
+
 
 void
 syscall(void)

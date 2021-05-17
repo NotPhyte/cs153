@@ -96,5 +96,16 @@ sys_setprior(void) {
     if (argint(1,&prio) < 0) {
         return -1;
     }
-    return setprior(prio);
+    else {
+        return setprior(prio);
+    }
+}
+unsigned int
+sys_turnaroundT(void){
+    return turnaroundT();
+}
+
+unsigned int
+sys_currTime(void ) {
+    return currTime();
 }

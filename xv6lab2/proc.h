@@ -49,7 +49,10 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
-  int prior_val;                //prior value
+  int prior_val;               //prior value
+  unsigned int starttime;      //start time
+  unsigned int turnaroundT;     //finish time
+
 
 };
 

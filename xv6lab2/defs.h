@@ -121,6 +121,8 @@ int             wait(void);
 void            wakeup(void*);
 void            yield(void);
 int            setprior(int);//MOD
+unsigned int    currTime(void);
+unsigned int    turnaroundT(void);
 
 // swtch.S
 void            swtch(struct context**, struct context*);

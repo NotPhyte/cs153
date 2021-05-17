@@ -320,11 +320,47 @@ wait(void)
 //  - eventually that process transfers control
 //      via swtch back to the scheduler.
 void
-scheduler(void)
-{
+scheduler(void) {
     //implementing priority scheduler
     struct proc *p;
+    struct proc *q;
     struct cpu *c = mycpu();
+    c->proc = 0;
+
+    for (;;) {
+        sti(); //interrupt
+        acquire(&ptable.lock);
+        p = ptable.proc;
+        while (p < &ptable.proc[NPROC]) {
+            if (p->state != RUNNABLE) {
+                p++;
+                continue;
+            }
+            for (q = p + 1; q < &ptable.proc[NPROC]; q++) {
+                if (q->state == RUNNABLE && q->prior_val < p->prior_val) {
+                    p = q;
+                }
+            }
+            c->proc = p;
+            switchuvm(p);
+
+            c->proc = 0;
+
+            for (q = ptable.proc; q < &ptable.proc[NPROC]; ++q) {
+                if (q->state == RUNNABLE) {
+                    if (q == p && q->prior_val < 31) {
+                        q->prior_val = q->prior_val + 1;
+                    } else if (q != p && q->prior_val > 0) {
+                        q->prior_val = q->prior_val + 1;
+                    }
+                }
+            }
+            cprintf(" \n This is process %d with priority %d \n ", p->pid, p->prior_val);
+            p = ptable.proc;
+        }
+        release(&ptable.lock);
+    }
+}
 
 //ROUND ROBIN SCHEDULER
 //  struct proc *p;
@@ -546,3 +582,22 @@ int setprior(int prior) {
     sched();
 
 }
+
+unsigned int currTime(void) {
+    unsigned int tick;
+    acquire(&tickslock);
+    tick = ticks;
+    release(&tickslock);
+    return tick;
+}
+
+unsigned int turnaroundT (void) {
+    unsigned int time;
+    struct  proc* currProc = myproc();
+    time = currTime();
+    currProc->turnaroundT; = time - currProc->starttime;
+    cprintf("Turnaround time for process is: %d\n",time);
+    return time;
+}
+
+
